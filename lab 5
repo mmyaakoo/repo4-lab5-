@@ -1,0 +1,151 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+// Інтерфейс для пошуку товарів
+public interface ISearchable
+{
+    List<Tovar> SearchByPrice(double maxPrice);
+    List<Tovar> SearchByCategory(string category);
+    List<Tovar> SearchByRating(int minRating);
+}
+
+// Клас, що представляє товар
+public class Tovar
+{
+    public string Name { get; set; }
+    public double Price { get; set; }
+    public string Description { get; set; }
+    public string Category { get; set; }
+    public int Rating { get; set; }
+
+    public Tovar(string name, double price, string description, string category, int rating)
+    {
+        Name = name;
+        Price = price;
+        Description = description;
+        Category = category;
+        Rating = rating;
+    }
+}
+
+// Клас, що представляє користувача
+public class Korystuvach
+{
+    public string Login { get; set; }
+    public string Password { get; set; }
+    public List<Zamovlennya> PurchaseHistory { get; set; }
+
+    public Korystuvach(string login, string password)
+    {
+        Login = login;
+        Password = password;
+        PurchaseHistory = new List<Zamovlennya>();
+    }
+}
+
+// Клас, що представляє замовлення
+public class Zamovlennya
+{
+    public List<Tovar> Items { get; set; }
+    public int Quantity { get; set; }
+    public double TotalCost { get; set; }
+    public string Status { get; set; }
+
+    public Zamovlennya(List<Tovar> items, int quantity, double totalCost, string status)
+    {
+        Items = items;
+        Quantity = quantity;
+        TotalCost = totalCost;
+        Status = status;
+    }
+}
+
+// Клас, що представляє магазин
+public class Magazin : ISearchable
+{
+    public List<Tovar> Tovary { get; set; }
+    public List<Korystuvach> Users { get; set; }
+    public List<Zamovlennya> Orders { get; set; }
+
+    public Magazin()
+    {
+        Tovary = new List<Tovar>();
+        Users = new List<Korystuvach>();
+        Orders = new List<Zamovlennya>();
+    }
+
+    // Додавання товару
+    public void AddTovar(Tovar tovar)
+    {
+        Tovary.Add(tovar);
+    }
+
+    // Додавання користувача
+    public void AddUser(Korystuvach user)
+    {
+        Users.Add(user);
+    }
+
+    // Створення замовлення
+    public void CreateOrder(List<Tovar> items, int quantity, Korystuvach user)
+    {
+        double totalCost = items.Sum(item => item.Price * quantity);
+        string status = "Нове замовлення";
+        Zamovlennya order = new Zamovlennya(items, quantity, totalCost, status);
+        user.PurchaseHistory.Add(order);
+        Orders.Add(order);
+    }
+
+    // Реалізація методів інтерфейсу ISearchable
+    public List<Tovar> SearchByPrice(double maxPrice)
+    {
+        return Tovary.Where(tovar => tovar.Price <= maxPrice).ToList();
+    }
+
+    public List<Tovar> SearchByCategory(string category)
+    {
+        return Tovary.Where(tovar => tovar.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    public List<Tovar> SearchByRating(int minRating)
+    {
+        return Tovary.Where(tovar => tovar.Rating >= minRating).ToList();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Створення магазину
+        Magazin magazin = new Magazin();
+
+        // Додавання товарів
+        Tovar tovar1 = new Tovar("Товар 1", 100.0, "Опис товару 1", "Категорія 1", 4);
+        Tovar tovar2 = new Tovar("Товар 2", 50.0, "Опис товару 2", "Категорія 2", 5);
+        Tovar tovar3 = new Tovar("Товар 3", 200.0, "Опис товару 3", "Категорія 1", 3);
+        magazin.AddTovar(tovar1);
+        magazin.AddTovar(tovar2);
+        magazin.AddTovar(tovar3);
+
+        // Додавання користувача
+        Korystuvach user = new Korystuvach("user1", "password1");
+        magazin.AddUser(user);
+
+        // Пошук товарів за різними критеріями
+        List<Tovar> affordableTovary = magazin.SearchByPrice(150.0);
+        List<Tovar> categoryTovary = magazin.SearchByCategory("Категорія 1");
+        List<Tovar> highRatedTovary = magazin.SearchByRating(4);
+
+        // Створення замовлення
+        magazin.CreateOrder(new List<Tovar> { tovar1, tovar2 }, 2, user);
+
+        // Виведення історії покупок користувача
+        Console.WriteLine("Історія покупок користувача:");
+        foreach (var order in user.PurchaseHistory)
+        {
+            Console.WriteLine($"Замовлення: {order.Items.Count} товарів, загальна вартість: {order.TotalCost}, Статус: {order.Status}");
+        }
+    }
+}
